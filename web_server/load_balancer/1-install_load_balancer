@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Installs and configures HAProxy (roundrobin) to balance traffic between web-01 and web-02
+# Usage: sudo ./1-install_load_balancer  (override IPs via WEB_01_IP / WEB_02_IP env vars)
+
+STUDENT_ID="${STUDENT_ID:-7371}"
+WEB_01_IP="${WEB_01_IP:-13.135.74.29}"
+WEB_02_IP="${WEB_02_IP:-REPLACE_WITH_WEB_02_IP}"
+
+apt-get update -y
+apt-get install -y haproxy
+
+# Allow HAProxy to be managed by its init script
+sed -i 's/^ENABLED=.*/ENABLED=1/' /etc/default/haproxy 2> /dev/null \
+    || echo "ENABLED=1" >> /etc/default/haproxy
+
+cat > /etc/haproxy/haproxy.cfg << CFG
+global
+    log /dev/log local0
+    log /dev/log local1 notice
+    chroot /var/lib/haproxy
+    stats socket /run/haproxy/admin.sock mode 660 level admin
+    stats timeout 30s
+    user haproxy
+    group haproxy
+    daemon
+
+defaults
+    log global
+    mode http
+    option httplog
+    option dontlognull
+    timeout connect 5000
+    timeout client 50000
+    timeout server 50000
+
+frontend http_front
+    bind *:80
+    default_backend web_servers
+
+backend web_servers
+    balance roundrobin
+    server ${STUDENT_ID}-web-01 ${WEB_01_IP}:80 check
+    server ${STUDENT_ID}-web-02 ${WEB_02_IP}:80 check
+CFG
+
+haproxy -c -f /etc/haproxy/haproxy.cfg
+service haproxy restart
