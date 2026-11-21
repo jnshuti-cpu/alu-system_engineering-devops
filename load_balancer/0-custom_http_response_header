@@ -2,19 +2,19 @@
 # Installs Nginx and adds a custom X-Served-By header containing the server hostname
 # shellcheck disable=SC2154
 
-apt-get update -y
-apt-get install -y nginx
+sudo apt-get update -y
+sudo apt-get install -y nginx
 
 # Default page so both servers respond with content
-echo "Hello World!" > /var/www/html/index.html
+echo "Hello World!" | sudo tee /var/www/html/index.html > /dev/null
 
 # Remove any previous X-Served-By lines so the header is never duplicated
-sed -i '/add_header X-Served-By/d' /etc/nginx/nginx.conf
-sed -i '/add_header X-Served-By/d' /etc/nginx/sites-available/default
+sudo sed -i '/add_header X-Served-By/d' /etc/nginx/nginx.conf
+sudo sed -i '/add_header X-Served-By/d' /etc/nginx/sites-available/default
 
 # Add the custom header at the http level (hostname is expanded by bash at write time)
-echo "add_header X-Served-By \"$(hostname)\";" > /etc/nginx/conf.d/x-served-by.conf
+echo "add_header X-Served-By \"$(hostname)\";" | sudo tee /etc/nginx/conf.d/x-served-by.conf > /dev/null
 
 # Validate config, then (re)start Nginx
-nginx -t
-service nginx restart
+sudo nginx -t
+sudo service nginx restart
