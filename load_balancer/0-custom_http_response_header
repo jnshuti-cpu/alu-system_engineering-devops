@@ -8,6 +8,10 @@ apt-get install -y nginx
 # Default page so both servers respond with content
 echo "Hello World!" > /var/www/html/index.html
 
+# Remove any previous X-Served-By lines so the header is never duplicated
+sed -i '/add_header X-Served-By/d' /etc/nginx/nginx.conf
+sed -i '/add_header X-Served-By/d' /etc/nginx/sites-available/default
+
 # Add the custom header at the http level (hostname is expanded by bash at write time)
 echo "add_header X-Served-By \"$(hostname)\";" > /etc/nginx/conf.d/x-served-by.conf
 
